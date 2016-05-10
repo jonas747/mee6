@@ -639,7 +639,7 @@ def levels(server_id):
         lvl = int(_players[i+1])
         x = 0
         for l in range(0,lvl):
-            x += 100*(1.2**l)
+            x += int(100*(1.2**l))
         remaining_xp = int(int(_players[i]) - x)
         player = {
             'total_xp': int(_players[i]),
