@@ -1096,9 +1096,13 @@ def plugin_welcome(server_id):
     members = typeahead_members(_members)
 
     initial_welcome = '{user}, Welcome to **{server}**!'\
-        ' Have a great time here :wink: !'
+        ' Have a great time here :wink:!'
     initial_gb = '**{user}** just left **{server}**. Bye bye **{user}**...'
-    welcome_message = db.get('Welcome.{}:welcome_message'.format(server_id))
+    
+    dm_welcome_message = db.get('Welcome.{}:dm_welcome_message'.format(server_id))
+    server_welcome_message = db.get('Welcome.{}:welcome_message'.format(server_id))
+    dm_welcome_enabled = db.get('Welcome.{}:dm_welcome_enabled'.format(server_id)) is not None # Off by default
+    server_welcome_enabled = db.get('Welcome.{}:server_welcome_disabled'.format(server_id)) is None # On by default
     private = db.get('Welcome.{}:private'.format(server_id)) or None
     gb_message = db.get('Welcome.{}:gb_message'.format(server_id))
     db_welcome_channel = db.get('Welcome.{}:channel_name'.format(server_id))
@@ -1111,20 +1115,25 @@ def plugin_welcome(server_id):
                 channel['id'] == db_welcome_channel:
             welcome_channel = channel
             break
-    if welcome_message is None:
+    if server_welcome_message is None:
         db.set('Welcome.{}:welcome_message'.format(server_id), initial_welcome)
-        welcome_message = initial_welcome
+        server_welcome_message = initial_welcome
+    if dm_welcome_message is None:
+        db.set('Welcome.{}:dm_welcome_message'.format(server_id), initial_welcome)
+        dm_welcome_message = initial_welcome
     if gb_message is None:
         db.set('Welcome.{}:gb_message'.format(server_id), initial_gb)
         gb_message = initial_gb
 
-    welcome_message = mention_parser(welcome_message)
+    server_welcome_message = mention_parser(server_welcome_message)
     gb_message = mention_parser(gb_message)
 
     return {
         'guild_members': members,
-        'welcome_message': welcome_message,
-        'private': private,
+        'server_welcome_message': server_welcome_message,
+        'dm_welcome_message': dm_welcome_message,
+        'server_welcome_enabled': server_welcome_enabled,
+        'dm_welcome_enabled': dm_welcome_enabled,
         'gb_message': gb_message,
         'guild_channels': guild_channels,
         'gb_enabled': gb_enabled,
@@ -1138,9 +1147,14 @@ def update_welcome(server_id):
 
     mention_decoder = get_mention_decoder(server_id)
 
-    welcome_message = request.form.get('welcome_message')
-    welcome_message = mention_decoder(welcome_message)
-    private = request.form.get('private')
+    server_welcome_message = request.form.get('server_welcome_message')
+    server_welcome_message = mention_decoder(server_welcome_message)
+    
+    dm_welcome_message = request.form.get('dm_welcome_message')
+    dm_welcome_message = mention_decoder(dm_welcome_message)
+
+    server_welcome_enabled = request.form.get('server_welcome_enabled')
+    dm_welcome_enabled = request.form.get('dm_welcome_enabled')
 
     gb_message = request.form.get('gb_message')
     gb_message = mention_decoder(gb_message)
@@ -1154,13 +1168,18 @@ def update_welcome(server_id):
     else:
         db.set('Welcome.{}:gb_disabled'.format(server_id), "1")
 
-    if private:
-        db.set('Welcome.{}:private'.format(server_id), "1")
+    if server_welcome_enabled:
+        db.delete('Welcome.{}:server_welcome_disabled'.format(server_id))
     else:
-        db.delete('Welcome.{}:private'.format(server_id))
+        db.set('Welcome.{}:server_welcome_disabled'.format(server_id), "1")
 
-    if welcome_message == '' or len(welcome_message) > 2000:
-        flash('The welcome message cannot be empty or have 2000+ characters.',
+    if dm_welcome_enabled:
+        db.set('Welcome.{}:dm_welcome_enabled'.format(server_id), "1")
+    else:
+        db.delete('Welcome.{}:dm_welcome_enabled'.format(server_id))
+
+    if server_welcome_message == '' or len(server_welcome_message) > 2000 or dm_welcome_message == '' or len(dm_welcome_message) > 2000:
+        flash('The welcome messages cannot be empty or have 2000+ characters.',
               'warning')
     else:
         if gb_message == '' or len(gb_message) > 2000:
@@ -1168,7 +1187,9 @@ def update_welcome(server_id):
                   ' or have 2000+ characters.', 'warning')
         else:
             db.set('Welcome.{}:welcome_message'.format(server_id),
-                   welcome_message)
+                   server_welcome_message)
+            db.set('Welcome.{}:dm_welcome_message'.format(server_id),
+                   dm_welcome_message)
             db.set('Welcome.{}:gb_message'.format(server_id), gb_message)
             db.set('Welcome.{}:channel_name'.format(server_id), channel)
             flash('Settings updated ;) !', 'success')

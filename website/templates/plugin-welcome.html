@@ -10,15 +10,22 @@
 					<form id="welcome" method="POST" action="{{url_for('update_welcome', server_id=server['id'])}}">
 						<div class="form-group">
 							<input name=_csrf_token type=hidden value="{{ csrf }}">
-							<label class="control-label" for="welcome_message">Welcome message</label>
-							<input class="form-control input-lg welcome_message" name="welcome_message" value="{{welcome_message}}" ype="text" id="welcome_message">
-							<div class="checkbox">
-								<label>
-									<input type="checkbox" name="private" {% if private %}checked{% endif %}> Send in Private Message
-								</label>
-							</div>
 							<div class="well well-sm">
 								<strong>Tips: </strong> <i>{user}</i> refers to the new member, <i>{server}</i> to your server name.
+							</div>
+							<label class="control-label" for="server_welcome_message">Server welcome message</label>
+							<input class="form-control input-lg server_welcome_message" name="server_welcome_message" value="{{server_welcome_message}}" ype="text" id="server_welcome_message">
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" name="server_welcome_enabled" {% if server_welcome_enabled %}checked{% endif %}> Server welcome enabled
+								</label>
+							</div>
+							<label class="control-label" for="dm_welcome_message">Direct message welcome</label>
+							<input class="form-control input-lg dm_welcome_message" name="dm_welcome_message" value="{{dm_welcome_message}}" ype="text" id="dm_welcome_message">
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" name="dm_welcome_enabled" {% if dm_welcome_enabled %}checked{% endif %}> Direct Message welcome enabled
+								</label>
 							</div>
 							<label class="control-label" for="gb_message">Good Bye message</label>
 							<input class="form-control input-lg gb_message" name="gb_message" value="{{gb_message}}" ype="text" id="gb_message">
@@ -26,9 +33,6 @@
 								<label>
 									<input type="checkbox" name="gb_enabled" {% if gb_enabled %}checked{% endif %}> Enabled
 								</label>
-							</div>
-							<div class="well well-sm">
-								<strong>Tips: </strong> <i>{user}</i> refers to the leaving member, <i>{server}</i> to your server name.
 							</div>
 							<label class="control-label" for="channel_name">Welcome/Good-Bye channel</label>
 							<select class="input-lg form-control" name="channel">
